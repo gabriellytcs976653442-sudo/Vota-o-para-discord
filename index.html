@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Urna Eletrônica — Comissão Técnica</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;background:#222;min-height:100vh;display:flex;justify-content:center;align-items:center;font-family:Arial,sans-serif;padding:18px;color:#111}
+.urna{width:min(980px,100%);background:#e9e9e9;border:7px solid #c8c8c8;border-radius:12px;overflow:hidden;box-shadow:0 20px 50px #000}
+.top{padding:18px 25px;border-bottom:2px solid #aaa}.top h1{margin:0;font-size:24px}.top p{margin:5px 0 0;color:#555}
+.main{display:grid;grid-template-columns:1.25fr .75fr;gap:20px;padding:22px}
+.screen{background:#f4f0dc;border:12px solid #151515;min-height:440px;padding:25px;position:relative}
+.title{font-weight:bold;font-size:18px;margin-bottom:25px}.code{display:flex;gap:7px;margin:14px 0 25px}
+.digit{width:45px;height:54px;background:#fff;border:1px solid #777;display:flex;align-items:center;justify-content:center;font-size:31px}
+.name{font-size:25px;font-weight:bold;margin:20px 0 8px}.info{font-size:15px}
+.status{position:absolute;bottom:20px;left:25px;right:25px;border-top:1px solid #888;padding-top:12px;font-size:14px}
+.keys{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;align-content:start}
+.key{height:63px;border:0;border-radius:7px;background:#333;color:white;font-size:24px;font-weight:bold;box-shadow:0 3px #111;cursor:pointer}
+.key:active{transform:translateY(2px);box-shadow:none}
+.white{background:#fff;color:#111;font-size:14px}.orange{background:#ef4b16}.green{background:#55ad73}.zero{grid-column:2}
+.help{grid-column:span 3;background:#ddd;padding:13px;font-size:13px;line-height:1.5}
+.results{border-top:2px solid #aaa;background:#fafafa;padding:20px 25px}
+.results h2{margin:0 0 18px;font-size:21px}.result{margin:14px 0}
+.row{display:flex;justify-content:space-between;margin-bottom:6px;font-weight:bold}
+.bar{height:19px;background:#ddd;border-radius:12px;overflow:hidden}.fill{height:100%;background:#d71920}
+.total{text-align:center;font-weight:bold;margin-top:17px}.note{text-align:center;color:#555;font-size:13px;margin-top:5px}
+.finish{display:none;position:absolute;inset:0;background:#f4f0dc;align-items:center;justify-content:center;flex-direction:column;text-align:center}
+.finish.show{display:flex}.finish h1{font-size:70px;margin:0 0 35px;letter-spacing:5px}
+.finish p{font-size:22px;margin:7px}.finish small{margin-top:25px;color:#555}
+@media(max-width:720px){.main{grid-template-columns:1fr}.screen{min-height:390px}}
+</style>
+</head>
+<body>
+<div class="urna">
+<div class="top"><h1>URNA ELETRÔNICA</h1><p>Comissão Técnica — Flamengo</p></div>
+
+<div class="main">
+<div class="screen">
+  <div id="voteScreen">
+    <div class="title">COMISSÃO TÉCNICA</div>
+    <div>Digite o número do candidato:</div>
+    <div class="code" id="code"></div>
+    <div class="name" id="name">AGUARDANDO VOTO</div>
+    <div class="info" id="info"></div>
+    <div class="status" id="status">Digite o número completo e aperte CONFIRMA.</div>
+  </div>
+
+  <div class="finish" id="finish">
+    <h1>FIM</h1>
+    <p><b>Voto registrado com sucesso!</b></p>
+    <p>Você pode voltar para o Discord.</p>
+    <small>Os votos foram salvos neste navegador.</small>
+  </div>
+</div>
+
+<div class="keys">
+<button class="key" onclick="digitar('1')">1</button>
+<button class="key" onclick="digitar('2')">2</button>
+<button class="key" onclick="digitar('3')">3</button>
+<button class="key" onclick="digitar('4')">4</button>
+<button class="key" onclick="digitar('5')">5</button>
+<button class="key" onclick="digitar('6')">6</button>
+<button class="key" onclick="digitar('7')">7</button>
+<button class="key" onclick="digitar('8')">8</button>
+<button class="key" onclick="digitar('9')">9</button>
+<button class="key zero" onclick="digitar('0')">0</button>
+<button class="key white" onclick="branco()">BRANCO</button>
+<button class="key orange" onclick="corrigir()">CORRIGE</button>
+<button class="key green" onclick="confirmar()">CONFIRMA</button>
+<div class="help">
+<b>Números dos candidatos:</b><br>
+21 — phzzkrandola<br>
+3 — alanlopescs/Losill3<br>
+10 — Snow_Ofc676
+</div>
+</div>
+</div>
+
+<div class="results">
+<h2>RESULTADO DA APURAÇÃO</h2>
+<div id="results"></div>
+<div class="total" id="total"></div>
+<div class="note">Os votos ficam salvos no navegador e continuam após recarregar a página.</div>
+</div>
+</div>
+
+<script>
+const candidatos={
+ "21":"phzzkrandola",
+ "3":"alanlopescs/Losill3",
+ "10":"Snow_Ofc676"
+};
+
+const chave="urna_flamengo_comissao_votos_v1";
+
+function votosIniciais(){
+ return {
+  "phzzkrandola":0,
+  "alanlopescs/Losill3":0,
+  "Snow_Ofc676":0
+ };
+}
+
+let votos;
+try{
+ const salvo=localStorage.getItem(chave);
+ votos=salvo ? JSON.parse(salvo) : votosIniciais();
+}catch(e){ votos=votosIniciais(); }
+
+for(const nome of Object.values(candidatos)){
+ if(typeof votos[nome]!=="number") votos[nome]=0;
+}
+
+let entrada="";
+
+function salvar(){
+ localStorage.setItem(chave,JSON.stringify(votos));
+}
+
+function desenhar(){
+ const code=document.getElementById("code");
+ code.innerHTML="";
+ for(let i=0;i<Math.max(2,entrada.length);i++)
+  code.innerHTML+=`<div class="digit">${entrada[i]||""}</div>`;
+
+ const nome=candidatos[entrada];
+ document.getElementById("name").textContent=nome||(!entrada?"AGUARDANDO VOTO":"NÚMERO INVÁLIDO");
+ document.getElementById("info").textContent=nome?"Número: "+entrada:"";
+ document.getElementById("status").textContent=nome?
+ "Aperte CONFIRMA para registrar este voto.":
+ entrada?"Número não cadastrado. Aperte CORRIGE.":"Digite o número completo e aperte CONFIRMA.";
+}
+
+function digitar(n){
+ if(entrada.length>=2)return;
+ entrada+=n;
+ desenhar();
+}
+
+function corrigir(){
+ entrada="";
+ desenhar();
+}
+
+function confirmar(){
+ const nome=candidatos[entrada];
+ if(!nome){
+  document.getElementById("status").textContent="NÚMERO INVÁLIDO — aperte CORRIGE.";
+  return;
+ }
+
+ votos[nome]++;
+ salvar();
+ entrada="";
+ mostrarResultados();
+
+ document.getElementById("voteScreen").style.display="none";
+ document.getElementById("finish").classList.add("show");
+}
+
+function branco(){
+ entrada="";
+ salvar();
+ document.getElementById("voteScreen").style.display="none";
+ document.getElementById("finish").classList.add("show");
+}
+
+function mostrarResultados(){
+ const total=Object.values(votos).reduce((a,b)=>a+b,0);
+ const area=document.getElementById("results");
+ area.innerHTML="";
+
+ for(const [numero,nome] of Object.entries(candidatos)){
+  const qtd=votos[nome];
+  const pct=total?(qtd/total)*100:0;
+  area.innerHTML+=`
+   <div class="result">
+    <div class="row">
+     <span>${nome} (${numero})</span>
+     <span>${qtd} votos — ${pct.toFixed(1)}%</span>
+    </div>
+    <div class="bar"><div class="fill" style="width:${pct}%"></div></div>
+   </div>`;
+ }
+ document.getElementById("total").textContent="TOTAL: "+total+" votos";
+}
+
+desenhar();
+mostrarResultados();
+</script>
+</body>
+</html>
