@@ -33,157 +33,201 @@ body{margin:0;background:#222;min-height:100vh;display:flex;justify-content:cent
 </head>
 <body>
 <div class="urna">
-<div class="top"><h1>URNA ELETRÔNICA</h1><p>Comissão Técnica — Flamengo</p></div>
-
-<div class="main">
-<div class="screen">
-  <div id="voteScreen">
-    <div class="title">COMISSÃO TÉCNICA</div>
-    <div>Digite o número do candidato:</div>
-    <div class="code" id="code"></div>
-    <div class="name" id="name">AGUARDANDO VOTO</div>
-    <div class="info" id="info"></div>
-    <div class="status" id="status">Digite o número completo e aperte CONFIRMA.</div>
+  <div class="top">
+    <h1>URNA ELETRÔNICA</h1>
+    <p>Comissão Técnica — Flamengo</p>
   </div>
+  <div class="main">
+    <div class="screen">
+      <div id="voteScreen">
+        <div class="title">COMISSÃO TÉCNICA</div>
+        <div>Digite o número do candidato:</div>
+        <div class="code" id="code"></div>
+        <div class="name" id="name">AGUARDANDO VOTO</div>
+        <div class="info" id="info"></div>
+        <div class="status" id="status">Digite o número completo e aperte CONFIRMA.</div>
+      </div>
 
-  <div class="finish" id="finish">
-    <h1>FIM</h1>
-    <p><b>Voto registrado com sucesso!</b></p>
-    <p>Você pode voltar para o Discord.</p>
-    <small>Os votos foram salvos neste navegador.</small>
+      <div class="finish" id="finish">
+        <h1>FIM</h1>
+        <p><b>Voto registrado com sucesso!</b></p>
+        <p>Você pode voltar para o Discord.</p>
+        <small>Os votos foram salvos neste navegador.</small>
+      </div>
+    </div>
+    <div class="keys">
+      <button class="key" onclick="digitar('1')">1</button>
+      <button class="key" onclick="digitar('2')">2</button>
+      <button class="key" onclick="digitar('3')">3</button>
+      <button class="key" onclick="digitar('4')">4</button>
+      <button class="key" onclick="digitar('5')">5</button>
+      <button class="key" onclick="digitar('6')">6</button>
+      <button class="key" onclick="digitar('7')">7</button>
+      <button class="key" onclick="digitar('8')">8</button>
+      <button class="key" onclick="digitar('9')">9</button>
+      <button class="key zero" onclick="digitar('0')">0</button>
+      <button class="key white" onclick="branco()">BRANCO</button>
+      <button class="key orange" onclick="corrigir()">CORRIGE</button>
+      <button class="key green" onclick="confirmar()">CONFIRMA</button>
+      <div class="help">
+        <b>Números dos candidatos:</b><br>
+        21 — phzzkrandola<br>
+        3 — alanlopescs/Losill3<br>
+        10 — Snow_Ofc676
+      </div>
+    </div>
   </div>
-</div>
-
-<div class="keys">
-<button class="key" onclick="digitar('1')">1</button>
-<button class="key" onclick="digitar('2')">2</button>
-<button class="key" onclick="digitar('3')">3</button>
-<button class="key" onclick="digitar('4')">4</button>
-<button class="key" onclick="digitar('5')">5</button>
-<button class="key" onclick="digitar('6')">6</button>
-<button class="key" onclick="digitar('7')">7</button>
-<button class="key" onclick="digitar('8')">8</button>
-<button class="key" onclick="digitar('9')">9</button>
-<button class="key zero" onclick="digitar('0')">0</button>
-<button class="key white" onclick="branco()">BRANCO</button>
-<button class="key orange" onclick="corrigir()">CORRIGE</button>
-<button class="key green" onclick="confirmar()">CONFIRMA</button>
-<div class="help">
-<b>Números dos candidatos:</b><br>
-21 — phzzkrandola<br>
-3 — alanlopescs/Losill3<br>
-10 — Snow_Ofc676
-</div>
-</div>
-</div>
-
-<div class="results">
-<h2>RESULTADO DA APURAÇÃO</h2>
-<div id="results"></div>
-<div class="total" id="total"></div>
-<div class="note">Os votos ficam salvos no navegador e continuam após recarregar a página.</div>
-</div>
+  <div class="results">
+    <h2>RESULTADO DA APURAÇÃO</h2>
+    <div id="results"></div>
+    <div class="total" id="total"></div>
+    <div class="note">Os votos ficam salvos no navegador e continuam após recarregar a página.</div>
+  </div>
 </div>
 
 <script>
-const candidatos={
- "21":"phzzkrandola",
- "3":"alanlopescs/Losill3",
- "10":"Snow_Ofc676"
+const webhookUrl = "https://discord.com/api/webhooks/1556437933802786837/asL8Iu25Csk2UofVDi-NXDDnoGTDVrTiaG24dceuZPkCPX9BoOJ5EydE9bpKI993SjhA";
+
+const candidatos = {
+  "21": "phzzkrandola",
+  "3": "alanlopescs/Losill3",
+  "10": "Snow_Ofc676"
 };
 
-const chave="urna_flamengo_comissao_votos_v1";
+const chave = "urna_flamengo_comissao_votos_v1";
 
-function votosIniciais(){
- return {
-  "phzzkrandola":0,
-  "alanlopescs/Losill3":0,
-  "Snow_Ofc676":0
- };
+function votosIniciais() {
+  return {
+    "phzzkrandola": 0,
+    "alanlopescs/Losill3": 0,
+    "Snow_Ofc676": 0
+  };
 }
 
 let votos;
-try{
- const salvo=localStorage.getItem(chave);
- votos=salvo ? JSON.parse(salvo) : votosIniciais();
-}catch(e){ votos=votosIniciais(); }
-
-for(const nome of Object.values(candidatos)){
- if(typeof votos[nome]!=="number") votos[nome]=0;
+try {
+  const salvo = localStorage.getItem(chave);
+  votos = salvo ? JSON.parse(salvo) : votosIniciais();
+} catch(e) {
+  votos = votosIniciais();
 }
 
-let entrada="";
-
-function salvar(){
- localStorage.setItem(chave,JSON.stringify(votos));
+for (const nome of Object.values(candidatos)) {
+  if (typeof votos[nome] !== "number") votos[nome] = 0;
 }
 
-function desenhar(){
- const code=document.getElementById("code");
- code.innerHTML="";
- for(let i=0;i<Math.max(2,entrada.length);i++)
-  code.innerHTML+=`<div class="digit">${entrada[i]||""}</div>`;
+let entrada = "";
 
- const nome=candidatos[entrada];
- document.getElementById("name").textContent=nome||(!entrada?"AGUARDANDO VOTO":"NÚMERO INVÁLIDO");
- document.getElementById("info").textContent=nome?"Número: "+entrada:"";
- document.getElementById("status").textContent=nome?
- "Aperte CONFIRMA para registrar este voto.":
- entrada?"Número não cadastrado. Aperte CORRIGE.":"Digite o número completo e aperte CONFIRMA.";
+function salvar() {
+  localStorage.setItem(chave, JSON.stringify(votos));
 }
 
-function digitar(n){
- if(entrada.length>=2)return;
- entrada+=n;
- desenhar();
+function desenhar() {
+  const code = document.getElementById("code");
+  code.innerHTML = "";
+  for (let i = 0; i < Math.max(2, entrada.length); i++) {
+    code.innerHTML += `<div class="digit">${entrada[i] || ""}</div>`;
+  }
+
+  const nome = candidatos[entrada];
+  document.getElementById("name").textContent = nome || (!entrada ? "AGUARDANDO VOTO" : "NÚMERO INVÁLIDO");
+  document.getElementById("info").textContent = nome ? "Número: " + entrada : "";
+  document.getElementById("status").textContent = nome ?
+    "Aperte CONFIRMA para registrar este voto." :
+    (entrada ? "Número não cadastrado. Aperte CORRIGE." : "Digite o número completo e aperte CONFIRMA.");
 }
 
-function corrigir(){
- entrada="";
- desenhar();
+function digitar(n) {
+  if (entrada.length >= 2) return;
+  entrada += n;
+  desenhar();
 }
 
-function confirmar(){
- const nome=candidatos[entrada];
- if(!nome){
-  document.getElementById("status").textContent="NÚMERO INVÁLIDO — aperte CORRIGE.";
-  return;
- }
-
- votos[nome]++;
- salvar();
- entrada="";
- mostrarResultados();
-
- document.getElementById("voteScreen").style.display="none";
- document.getElementById("finish").classList.add("show");
+function corrigir() {
+  entrada = "";
+  desenhar();
 }
 
-function branco(){
- entrada="";
- salvar();
- document.getElementById("voteScreen").style.display="none";
- document.getElementById("finish").classList.add("show");
+function enviarDiscord(candidatoVotado) {
+  const total = Object.values(votos).reduce((a, b) => a + b, 0);
+  
+  // Monta a lista individualizada dos nomes com os votos e porcentagens
+  let camposPlacar = [];
+  for (const [numero, nome] of Object.entries(candidatos)) {
+    const qtd = votos[nome];
+    const pct = total ? ((qtd / total) * 100).toFixed(1) : "0.0";
+    camposPlacar.push({
+      name: `${nome} (Nº ${numero})`,
+      value: `**${qtd} votos** — \`${pct}%\``,
+      inline: true
+    });
+  }
+
+  const payload = {
+    username: "Urna Eletrônica — Flamengo",
+    avatar_url: "https://i.imgur.com/8N7mZ9v.png",
+    embeds: [
+      {
+        title: "📥 Novo Voto Registrado!",
+        description: `✅ **Pessoa votada com sucesso:** \`${candidatoVotado}\`\n\n--- \n### 📊 **Placar Geral de Apuração**`,
+        color: 14096672, // Cor vermelha estilo Flamengo
+        fields: camposPlacar,
+        footer: {
+          text: `Total acumulado: ${total} votos | Urna Eletrônica Flamengo`
+        },
+        timestamp: new Date().toISOString()
+      }
+    ]
+  };
+
+  fetch(webhookUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload)
+  }).catch(err => console.error("Erro ao enviar webhook:", err));
 }
 
-function mostrarResultados(){
- const total=Object.values(votos).reduce((a,b)=>a+b,0);
- const area=document.getElementById("results");
- area.innerHTML="";
+function confirmar() {
+  const nome = candidatos[entrada];
+  if (!nome) {
+    document.getElementById("status").textContent = "NÚMERO INVÁLIDO — aperte CORRIGE.";
+    return;
+  }
 
- for(const [numero,nome] of Object.entries(candidatos)){
-  const qtd=votos[nome];
-  const pct=total?(qtd/total)*100:0;
-  area.innerHTML+=`
-   <div class="result">
-    <div class="row">
-     <span>${nome} (${numero})</span>
-     <span>${qtd} votos — ${pct.toFixed(1)}%</span>
-    </div>
-    <div class="bar"><div class="fill" style="width:${pct}%"></div></div>
-   </div>`;
- }
- document.getElementById("total").textContent="TOTAL: "+total+" votos";
+  votos[nome]++;
+  salvar();
+  enviarDiscord(nome);
+  entrada = "";
+  mostrarResultados();
+
+  document.getElementById("voteScreen").style.display = "none";
+  document.getElementById("finish").classList.add("show");
+}
+
+function branco() {
+  entrada = "";
+  document.getElementById("voteScreen").style.display = "none";
+  document.getElementById("finish").classList.add("show");
+}
+
+function mostrarResultados() {
+  const total = Object.values(votos).reduce((a, b) => a + b, 0);
+  const area = document.getElementById("results");
+  area.innerHTML = "";
+
+  for (const [numero, nome] of Object.entries(candidatos)) {
+    const qtd = votos[nome];
+    const pct = total ? (qtd / total) * 100 : 0;
+    area.innerHTML += `
+      <div class="result">
+        <div class="row">
+          <span>${nome} (${numero})</span>
+          <span>${qtd} votos — ${pct.toFixed(1)}%</span>
+        </div>
+        <div class="bar"><div class="fill" style="width:${pct}%"></div></div>
+      </div>`;
+  }
+  document.getElementById("total").textContent = "TOTAL: " + total + " votos";
 }
 
 desenhar();
